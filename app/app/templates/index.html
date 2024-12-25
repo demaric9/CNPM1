@@ -1,0 +1,108 @@
+{% extends 'layout/base.html' %}
+
+
+{% block content %}
+{% if err %}
+<div class="alert alert-danger">
+    {{ err }}
+</div>
+{% endif %}
+
+
+<div id="booking" class="section d-flex align-items-center justify-content-center mt-3">
+    <div class="col-md-6">
+        <div class="booking-form">
+            <form method="post" action="/" enctype="multipart/form-data">
+                <div class="form-group">
+                    <div class="form-checkbox">
+                        <label>
+                            <input type="radio" id="roundtrip" name="flight-type" value="Round">
+                            <span></span>Round trip
+                        </label>
+                        <label>
+                            <input type="radio" id="oneway" name="flight-type" value="Oneway">
+                            <span></span>One way
+                        </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Flying from</span>
+                            <!--                            <input class="form-control" type="text" placeholder="City or airport">-->
+                            <select name="airport_dep" id="airport1" class="form-control">
+                                {% for airport in airports %}
+                                <option value="{{ airport.code }}">{{ airport.name }} ({{ airport.code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Flying to</span>
+                            <select name="airport_arr" id="airport2" class="form-control">
+                                {% for airport in airports %}
+                                <option value="{{ airport.code }}">{{ airport.name }} ({{ airport.code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Departing</span>
+                            <input class="form-control" type="date" name="dateDepart" min="{{ today }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Returning</span>
+
+                            <input class="form-control" type="date" name="dateArrival" min="{{ today }}" required>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Tickets Amount</span>
+                            <input type="number" name="amount" class="form-control" value="1" max="6" required>
+
+                        </div>
+                    </div>
+                    <!--                    <div class="col-md-4">-->
+                    <!--                        <div class="form-group">-->
+                    <!--                            <span class="form-label">Children (0-17)</span>-->
+                    <!--&lt;!&ndash;                            <select class="form-control">&ndash;&gt;-->
+                    <!--&lt;!&ndash;                                <option>0</option>&ndash;&gt;-->
+                    <!--&lt;!&ndash;                                <option>1</option>&ndash;&gt;-->
+                    <!--&lt;!&ndash;                                <option>2</option>&ndash;&gt;-->
+                    <!--&lt;!&ndash;                            </select>&ndash;&gt;-->
+                    <!--                            <input type="number" name="amount" class="form-control" value="1" max="6" required>-->
+                    <!--                            <span class="select-arrow"></span>-->
+                    <!--                        </div>-->
+                    <!--                    </div>-->
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Travel class</span>
+                            <select class="form-control">
+                                <option>Economy class</option>
+                                <option>Business class</option>
+                            </select>
+                            <span class="select-arrow"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-btn">
+                    <div class="mt-3">
+                        <button class="submit-btn btn-primary" type="submit" name="result">Show flights</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

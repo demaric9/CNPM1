@@ -1,0 +1,93 @@
+{% extends 'layout/base.html' %}
+
+
+{% block content %}
+<div id="booking" class="section d-flex align-items-center justify-content-center mt-3">
+    <div class="col-md-6">
+        <div class="booking-form">
+            <form action="/schedule" method="post" enctype="multipart/form-data">
+                <h2 style="text-align: center;">SCHEDULE</h2>
+                <div class="form-group">
+                    <span class="form-label">Flight Number</span>
+                    <input class="form-control" type="text" required min="6" name="flight_code" id="flight_code">
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Flying from</span>
+                            <!--                            <input class="form-control" type="text" placeholder="City or airport">-->
+                            <select name="airport1" id="airport1" class="form-control">
+                                {% for airport in airports %}
+                                <option value="{{ airport.code }}">{{ airport.name }} ({{ airport.code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Flying to</span>
+                            <select name="airport2" id="airport2" class="form-control">
+                                {% for airport in airports %}
+                                <option value="{{ airport.code }}">{{ airport.name }} ({{ airport.code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Departing</span>
+                            <input class="form-control" type="datetime-local" min="{{ today }}" required
+                                   name="departure_time">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Time</span>
+                            <input class="form-control" type="datetime-local" name="arrival_time" required
+                            min="{{ today }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Route</span>
+                            <select name="route" id="route" class="form-control">
+                                {% for route in routes %}
+                                <option value="{{ route.id }}">{{ route.id }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <span class="form-label">Airplane</span>
+                            <select name="airplane" id="airplane" class="form-control">
+                                {% for airplane in airplanes %}
+                                <option value="{{ airplane.id }}">{{ airplane.id }}. {{ airplane.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <span class="form-label">List of routes and airport</span>
+                    <select name="airplane" id="route_airport" class="form-control" aria-readonly="true">
+                        {% for route_id, departure_name, destination_name in list_routes_airport %}
+                        <option value="{{ route_id }}"> {{ route_id }}. {{ departure_name }} - {{ destination_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-btn">
+                    <div class="mt-3">
+                        <button class="submit-btn btn-primary" type="submit">Schedule Flight</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
