@@ -4,7 +4,25 @@
 <h1 class="text-center text-danger mt-1">THÔNG KÊ BÁO CÁO</h1>
 
 <div class="row">
-    <div class="col-md-7 col-12"></div>
+    <div class="col-md-7 col-12">
+        <table class="table">
+            <tr>
+                <th>Id</th>
+                <th>Depature Airport</th>
+                <th>Destination Airport</th>
+                <th>Total Revenue</th>
+            </tr>
+            {% for s in stats %}
+            <tr>
+                <td>{{ s[0] }}</td>
+                <td>{{ s[1] }}</td>
+                <td>{{ s[2] }}</td>
+                <td>{{ s[3] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    </div>
     <div class="col-md-5 col-12">
         <canvas id="myChart"></canvas>
     </div>
@@ -12,17 +30,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    window.onload = function() {
-         const ctx = document.getElementById('myChart');
-
-          new Chart(ctx, {
+    function draw(ctx, data, labels) {
+        new Chart(ctx, {
             type: 'bar',
             data: {
-              labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+              labels: labels,
               datasets: [{
-                label: '# of Votes',
-                data: [12, 19, 3, 5, 2, 3],
-                borderWidth: 1
+                label: 'Total Revenue',
+                data: data,
+                borderWidth: 1,
+                backgroundColor: ['red', 'green', 'blue', 'gold']
               }]
             },
             options: {
@@ -34,5 +51,19 @@
             }
           });
     }
+    let data = [];
+    let labels = [];
+
+    {% for s in stats %}
+        data.push({{ s[4] }});
+        labels.push('{{ s[1] }} -> {{ s[2] }}')
+    {% endfor %}
+
+    window.onload = function() {
+        const ctx = document.getElementById('myChart');
+        draw(ctx, data, labels);
+    }
+
+
 </script>
 {% endblock %}

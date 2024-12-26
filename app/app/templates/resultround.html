@@ -1,0 +1,37 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<!--{% if err %}-->
+<!--    <div>-->
+<!--        {{ err }}-->
+<!--    </div>-->
+<!--{% endif %}-->
+
+{% if flights_round %}
+<div class="col-md-3 col-12 p-2">
+    {% for flight in flights_round %}
+    <form action="/resultround" method="post">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">{{ flight.id }}</h4>
+                <input type="hidden" id="flight_id" name="flight_id" value="{{ flight.id }}">
+                <p class="card-text">{{ flight.flight_code }}</p>
+                <span></span>Depature
+                <p>{{ flight.departure_time }}</p>
+                <span></span>Arrival
+                <p>{{ flight.arrival_time }}</p>
+                {% if current_user.is_authenticated %}
+                    <button class="btn btn-success" type="submit">
+                        Confirm
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+    {% endfor %}
+</div>
+{% else %}
+<p>No flights found matching your criteria.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,3 +1,4 @@
+from sys import exception
 
 from sqlalchemy.exc import IntegrityError
 
@@ -23,17 +24,18 @@ def index():
         arrival_date = request.form.get("dateArrival")
         passengers_amount = request.form.get("amount")
         print(f"Passengers Amount: {passengers_amount}")
-        if passengers_amount:
-            session['passenger_amount'] = int(passengers_amount)
-        else:
-            flash("Error", "error")
-
-        session['radio_choice'] = selected_radio
         if departure_air == arrival_air:
-            err = 'Same airport !! Please choosing another airport'
+            err = 'Same airport !! Please choose another airport to find'
+        if not passengers_amount:
+            err = 'Amount of passengers must be at least 1 !!'
         else:
+            session['passenger_amount'] = int(passengers_amount)
+            session['radio_choice'] = selected_radio
             flights = dao.search_load(departure_air, arrival_air, departure_date, arrival_date)
             session['flights'] = [flight.to_dict() for flight in flights]
+            if selected_radio == 'Round':
+                flights_round = dao.search_round_load(departure_air, arrival_air, departure_date, arrival_date)
+                session['flights_round'] = [flight.to_dict() for flight in flights_round]
             return redirect(url_for('result'))
 
     return render_template('index.html', airports=list_airport, today=today, err=err)
@@ -83,15 +85,18 @@ def load_register_form():
 
 @app.route("/result", methods=['POST', 'get'])
 def result():
-    flights = session.get('flights', [])
     selected_radio = session.get("radio_choice")
+    flights = session.get('flights', [])
 
     if request.method.__eq__('POST'):
         flight_id = request.form.get('flight_id')
         if flight_id:
             print(flight_id)
             session['flight_id'] = flight_id
-            return redirect('/passenger')
+            if selected_radio == 'Oneway':
+                return redirect("/passenger")
+            elif selected_radio == 'Round':
+                return redirect("/resultround")
 
 
     return render_template("result.html", flights=flights, selected_radio=selected_radio)
@@ -124,11 +129,11 @@ def load_schedule():
 def passenger():
     amount_of_passengers = session.get('passenger_amount')
     selected_radio = session.get("radio_choice")
+    if selected_radio == 'Round':
+        print(selected_radio)
     err = ''
     passenger_ids = []
     flag = True
-    if selected_radio == 'Round':
-        return redirect("/resultoneway")
 
     if request.method.__eq__('POST'):
         for i in range(amount_of_passengers):
@@ -150,25 +155,30 @@ def passenger():
                     flag = False
                 else:
                     try:
-                        # Add passenger to the database
-                        passenger_add = dao.add_passenger(passenger_name, passenger_phone, passenger_email,
-                                                          passenger_birth)
+                        passenger_add = dao.add_passenger(passenger_name, passenger_phone, passenger_email, passenger_birth)
+                        db.session.flush()
                         passenger_ids.append(passenger_add)
                     except IntegrityError:
-                        db.session.rollback()  # Rollback in case of error
+                        db.session.rollback()
                         err = f"Failed to add passenger: {passenger_name}"
                         flag = False
 
-    if flag:
-        session['passenger_ids'] = passenger_ids
-        return redirect('/ticketpayment')
+        if flag:
+            db.session.commit()
+            session['passenger_ids'] = passenger_ids
+            return redirect('/ticketpayment')
 
     return render_template('passenger.html', amount_of_passengers=amount_of_passengers, err=err)
 
-@app.route("/resultoneway", methods=['get','post'])
-def result_oneway():
+@app.route("/resultround", methods=['get','post'])
+def result_round():
+    flights_round = session.get('flights_round',[])
+    if request.method.__eq__('POST'):
+        flight_id = request.form.get('flight_id')
+        session['flight_round_id'] = flight_id
+        return redirect(url_for('passenger'))
 
-    return render_template('resultoneway.html')
+    return render_template('resultround.html', flights_round=flights_round)
 
 @app.route("/ticketpayment",methods=['get','post'])
 def ticket_and_payment():
@@ -176,17 +186,42 @@ def ticket_and_payment():
     amount_of_passengers = session.get('passenger_amount')
     passengers = session.get('passenger_ids',[])
     flight_id = session.get('flight_id')
+    flight_round_id = session.get('flight_round_id')
+    selected_radio = session.get("radio_choice")
     if not amount_of_passengers:
         err = 'Not found any passenger'
     try:
         if request.method.__eq__('POST'):
+            flag = True
             for i in range(amount_of_passengers):
                 p = passengers[i]
                 price = request.form.get(f'price_{i}')
                 seat_number = request.form.get(f"seat_num_{i}")
+
+                checking_seat = dao.search_seats(flight_id, seat_number)
+                if checking_seat:
+                    flag = False
+                    raise Exception(f"Seat number {seat_number} is already taken for this Flight no {flight_id} please choose another Seat")
+
                 ticket = dao.add_ticket(price,flight_id,p)
-                dao.add_seat(seat_number,ticket)
-                dao.add_payment(price,ticket)
+                db.session.flush()
+                dao.add_seat(seat_number, ticket)
+                db.session.flush()
+                dao.add_payment(price, ticket)
+                db.session.flush()
+                if selected_radio == 'Round':
+                    checking_seat_round = dao.search_seats(flight_round_id, seat_number)
+                    if checking_seat_round:
+                        flag = False
+                        raise ValueError(f"Seat number {seat_number} is already taken for {flight_round_id} please choose another Seat")
+                    ticket2 = dao.add_ticket(price,flight_round_id,p)
+                    db.session.flush()
+                    dao.add_seat(seat_number,ticket2)
+                    db.session.flush()
+                    dao.add_payment(price,ticket2)
+                    db.session.flush()
+            if flag:
+                db.session.commit()
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
