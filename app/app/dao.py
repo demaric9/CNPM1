@@ -40,12 +40,12 @@ def get_user_by_id(user_id):
 
 
 def add_flights(flight_code, departure_time, arrival_time, route_id, airplane_id):
-    f = Flight(flight_code=flight_code, departure_time=departure_time, arrival_time=arrival_time, route_id=route_id,
+    new_flight = Flight(flight_code=flight_code, departure_time=departure_time, arrival_time=arrival_time, route_id=route_id,
                airplane_id=airplane_id)
 
-    db.session.add(f)
+    db.session.add(new_flight)
     db.session.commit()
-
+    return new_flight
 
 def search_airport():
     DepartureAirport = aliased(Airport)
@@ -62,7 +62,25 @@ def search_airport():
         .all()
     )
     return routes
+def all_flights():
+    DepartureAirport = aliased(Airport)
+    DestinationAirport = aliased(Airport)
 
+    results = db.session.query(
+        Route.id.label('route_id'),
+        DepartureAirport.name.label('departure_airport'),
+        DestinationAirport.name.label('destination_airport'),
+        Flight.departure_time,
+        Flight.arrival_time
+    ).join(
+        DepartureAirport, DepartureAirport.id == Route.departure_airport_id
+    ).join(
+        DestinationAirport, DestinationAirport.id == Route.destination_airport_id
+    ).join(
+        Flight, Flight.route_id == Route.id
+    ).all()
+
+    return results
 
 def search_load(departure_air, arrival_air, departure_date, arrival_date):
     try:
@@ -172,6 +190,29 @@ def search_seats(flight_id,seat_number):
         Seat.number == seat_number
     ).first()
     return existing_seat
+
+def search_for_newly_ticket():
+    DepartureAirport = aliased(Airport)
+    DestinationAirport = aliased(Airport)
+
+    results = db.session.query(
+        Ticket.id.label('ticket_id'),
+        Ticket.price.label('ticket_price'),
+        Flight.departure_time.label('flight_depart_time'),
+        Flight.arrival_time.label('flight_arrival_time'),
+        DepartureAirport.name.label('route_depart_airport'),
+        DestinationAirport.name.label('route_destination_airport')
+    ).join(
+        Flight, Ticket.flight_id == Flight.id
+    ).join(
+        Route, Flight.route_id == Route.id
+    ).join(
+        DepartureAirport, Route.departure_airport_id == DepartureAirport.id
+    ).join(
+        DestinationAirport, Route.destination_airport_id == DestinationAirport.id
+    ).all()
+
+    return results
 
 def load_airports():
     return Airport.query.all()

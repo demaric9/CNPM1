@@ -2,25 +2,26 @@
 
 {% block content %}
 {% if err %}
-    <div>
-        {{ err }}
-    </div>
+<div>
+    {{ err }}
+</div>
 {% endif %}
 
 {% if flights %}
-<div class="col-md-3 col-12 p-2">
-    {% for flight in flights %}
-    <form action="/result" method="post">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title">{{ flight.id }}</h4>
-                <input type="hidden" id="flight_id" name="flight_id" value="{{ flight.id }}">
-                <p class="card-text">{{ flight.flight_code }}</p>
-                <span></span>Depature
-                <p>{{ flight.departure_time }}</p>
-                <span></span>Arrival
-                <p>{{ flight.arrival_time }}</p>
-                {% if current_user.is_authenticated %}
+<div class="row">
+    <div class="col-md-3 col-12 p-2">
+        {% for flight in flights %}
+        <form action="/result" method="post">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Flight no. {{ flight.id }}</h4>
+                    <input type="hidden" id="flight_id" name="flight_id" value="{{ flight.id }}">
+                    <p class="card-text">Flight code {{ flight.flight_code }}</p>
+                    <span></span>Departure Time
+                    <p>{{ flight.departure_time }}</p>
+                    <span></span>Arrival Time
+                    <p>{{ flight.arrival_time }}</p>
+                    {% if current_user.is_authenticated %}
                     {% if selected_radio.__eq__('Oneway') %}
                     <button class="btn btn-success" type="submit">
                         Confirm
@@ -30,11 +31,12 @@
                     <button class="btn btn-danger" type="submit">Continue
                     </button>
                     {% endif %}
-                {% endif %}
+                    {% endif %}
+                </div>
             </div>
-        </div>
-    </form>
-    {% endfor %}
+        </form>
+        {% endfor %}
+    </div>
 </div>
 {% else %}
 <p>No flights found matching your criteria.</p>

@@ -17,23 +17,21 @@
                         Chao {{ current_user.username }}
                     </a>
                 </li>
-                <li class="nav-item">
-                        <a class="nav-link" href="/schedule">
-                            {{ current_user.user_role }}
-                        </a>
-                </li>
-                {% if current_user.user_role == 'UserRole.EMPLOYEE' %}
-                <li class="nav-item">
-                        <a class="nav-link" href="/schedule">
-                            Schedule Flight
-                        </a>
-                </li>
-                {% endif %}
+                    {% if current_user.user_role == UserRole.EMPLOYEE %}
+                    <li class="nav-item">
+                            <a class="nav-link" href="/schedule">
+                                Schedule Flight
+                            </a>
+                    </li>
+
+                    <li class="nav-item">
+                            <a class="nav-link" href="/all_flights">
+                                Flights
+                            </a>
+                    </li>
+                    {% endif %}
                 <li class="nav-item">
                     <a class="nav-link text-danger" href="/logout">Logout</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/tickets">Your tickets</a>
                 </li>
                 {% else %}
                 <li class="nav-item">

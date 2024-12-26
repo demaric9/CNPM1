@@ -2,6 +2,19 @@
 
 
 {% block content %}
+
+{% if msg %}
+    <div class="alert alert-danger">
+        {{ msg }}
+    </div>
+{% endif %}
+
+{% if msg_success %}
+    <div class="alert alert-success">
+        {{ msg_success }}
+    </div>
+{% endif %}
+
 <div id="booking" class="section d-flex align-items-center justify-content-center mt-3">
     <div class="col-md-6">
         <div class="booking-form">
@@ -9,7 +22,7 @@
                 <h2 style="text-align: center;">SCHEDULE</h2>
                 <div class="form-group">
                     <span class="form-label">Flight Number</span>
-                    <input class="form-control" type="text" required min="6" name="flight_code" id="flight_code">
+                    <input class="form-control" type="text" name="flight_code" id="flight_code">
                 </div>
                 <div class="row">
                     <div class="col-md-6">

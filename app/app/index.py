@@ -1,7 +1,6 @@
 from sys import exception
 
 from sqlalchemy.exc import IntegrityError
-
 from app import app, login, db
 from flask import render_template, url_for, request, redirect, session, flash, jsonify
 import dao
@@ -109,8 +108,9 @@ def load_schedule():
     list_routes = dao.load_route()
     today = datetime.today().strftime('%Y-%m-%dT%H:%M')
     list_routes_airport = dao.search_airport()
-    check = True
-    err = ''
+    msg = ''
+    msg_success = ''
+    new_flight = []
     if request.method.__eq__('POST'):
         flight_code = request.form.get("flight_code")
         departure_time = request.form.get("departure_time")
@@ -119,11 +119,15 @@ def load_schedule():
         airplane_id = request.form.get("airplane")
 
         if not flight_code:
-            check=False
-            err = 'Flight code must not be empty !!!'
+            msg = 'Flight code must not be empty !!!'
+        elif len(flight_code) != 6:
+            msg = 'Flight code must be 6 characters !!! '
         else:
-            dao.add_flights(flight_code, departure_time, arrival_time, route_id, airplane_id)
-    return render_template("schedule.html", today=today, airports=list_airport, airplanes =list_airplanes, routes=list_routes, list_routes_airport=list_routes_airport)
+            new_flight = dao.add_flights(flight_code, departure_time, arrival_time, route_id, airplane_id)
+            msg_success = 'Schedule success !!!'
+
+    return render_template("schedule.html", today=today, airports=list_airport, airplanes =list_airplanes, routes=list_routes,
+                           list_routes_airport=list_routes_airport, msg=msg, new_flight=new_flight, msg_success=msg_success)
 
 @app.route("/passenger", methods=['get','post'])
 def passenger():
@@ -182,6 +186,8 @@ def result_round():
 
 @app.route("/ticketpayment",methods=['get','post'])
 def ticket_and_payment():
+    tickets = []
+    msg_success = ''
     err = ''
     amount_of_passengers = session.get('passenger_amount')
     passengers = session.get('passenger_ids',[])
@@ -190,43 +196,46 @@ def ticket_and_payment():
     selected_radio = session.get("radio_choice")
     if not amount_of_passengers:
         err = 'Not found any passenger'
-    try:
-        if request.method.__eq__('POST'):
-            flag = True
-            for i in range(amount_of_passengers):
-                p = passengers[i]
-                price = request.form.get(f'price_{i}')
-                seat_number = request.form.get(f"seat_num_{i}")
 
-                checking_seat = dao.search_seats(flight_id, seat_number)
-                if checking_seat:
+    if request.method.__eq__('POST'):
+        flag = True
+        for i in range(amount_of_passengers):
+            p = passengers[i]
+            price = request.form.get(f'price_{i}')
+            seat_number = request.form.get(f"seat_num_{i}")
+
+            checking_seat = dao.search_seats(flight_id, seat_number)
+            if checking_seat:
+                flag = False
+                raise ValueError(
+                    f"Seat number {seat_number} is already taken for this Flight no {flight_id} please choose another Seat")
+
+            ticket = dao.add_ticket(price, flight_id, p)
+
+            db.session.flush()
+            dao.add_seat(seat_number, ticket)
+            db.session.flush()
+            dao.add_payment(price, ticket)
+            db.session.flush()
+            if selected_radio == 'Round':
+                checking_seat_round = dao.search_seats(flight_round_id, seat_number)
+                if checking_seat_round:
                     flag = False
-                    raise Exception(f"Seat number {seat_number} is already taken for this Flight no {flight_id} please choose another Seat")
+                    raise ValueError(
+                        f"Seat number {seat_number} is already taken for {flight_round_id} please choose another Seat")
+                ticket2 = dao.add_ticket(price, flight_round_id, p)
 
-                ticket = dao.add_ticket(price,flight_id,p)
                 db.session.flush()
-                dao.add_seat(seat_number, ticket)
+                dao.add_seat(seat_number, ticket2)
                 db.session.flush()
-                dao.add_payment(price, ticket)
+                dao.add_payment(price, ticket2)
                 db.session.flush()
-                if selected_radio == 'Round':
-                    checking_seat_round = dao.search_seats(flight_round_id, seat_number)
-                    if checking_seat_round:
-                        flag = False
-                        raise ValueError(f"Seat number {seat_number} is already taken for {flight_round_id} please choose another Seat")
-                    ticket2 = dao.add_ticket(price,flight_round_id,p)
-                    db.session.flush()
-                    dao.add_seat(seat_number,ticket2)
-                    db.session.flush()
-                    dao.add_payment(price,ticket2)
-                    db.session.flush()
-            if flag:
-                db.session.commit()
-    except Exception as e:
-        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
+        if flag:
+            msg_success = 'Reserve Success !!! '
+            db.session.commit()
 
-    return render_template("ticketpayment.html", err=err,amount_of_passengers=amount_of_passengers)
+    return render_template("ticketpayment.html", err=err,amount_of_passengers=amount_of_passengers, msg_success=msg_success)
 
 @app.route("/login-admin", methods=['post'])
 def login_admin_process():
@@ -239,6 +248,20 @@ def login_admin_process():
 
     return redirect('/admin')
 
+@app.route("/all_flights")
+def load_flights():
+    flights = dao.all_flights()
+
+    return render_template('flights.html',flights=flights)
+
+@app.route("/tickets_after")
+def load_tickets():
+    tickets = session.get('tickets', [])
+    return render_template('ticket_after.html', tickets=tickets)
+
+@app.context_processor
+def inject_user_roles():
+    return dict(UserRole=UserRole)
 
 if __name__ == '__main__':
     from app import admin

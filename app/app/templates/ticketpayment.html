@@ -3,6 +3,12 @@
 
 {% block content %}
 
+{% if msg_success %}
+    <div class="alert alert-success">
+        {{ msg_success }}
+    </div>
+{% endif %}
+
 <div id="booking" class="section d-flex align-items-center justify-content-center mt-3">
     <div class="col-md-6">
         <div class="booking-form">
